@@ -1,0 +1,27 @@
+{
+  "name": "Yume Note 夢 — Аниме Заметки",
+  "short_name": "YumeNote",
+  "description": "Персональное приложение заметок с аниме интерфейсом и тотальной кастомизацией",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#17121b",
+  "theme_color": "#17121b",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle", "personalization"],
+  "shortcuts": [
+    {
+      "name": "Новая заметка",
+      "short_name": "Новая",
+      "description": "Быстро записать заметку",
+      "url": "./index.html?action=new"
+    }
+  ]
+}

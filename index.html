@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="sakura">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Yume Note 夢 — Персональные Аниме Заметки</title>
+  
+  <!-- PWA & Mobile Meta -->
+  <meta name="theme-color" content="#17121b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Персональные аниме-заметки для Android с максимальной кастомизацией">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/themes.css">
+  <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+  <div id="app-viewport">
+    <!-- Dynamic Particle Canvas -->
+    <canvas id="fx-canvas"></canvas>
+    <!-- Background overlay filter -->
+    <div id="bg-overlay"></div>
+
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="header-logo-icon">🌸</div>
+        <div class="header-title-wrap">
+          <span class="header-app-name" id="header-app-title">Yume Note 夢</span>
+          <span class="header-app-badge" id="header-theme-badge">Sakura Edition</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="YumeNote.apk" download="YumeNote.apk" class="icon-btn" title="Скачать готовый Android APK" style="text-decoration:none;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+          </svg>
+        </a>
+        <button class="icon-btn" id="btn-toggle-view" title="Переключить вид (список/сетка)">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M4 4h7v7H4V4zm0 9h7v7H4v-7zm9-9h7v7h-7V4zm0 9h7v7h-7v-7z"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btn-open-settings" title="Кастомизация всего">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-content">
+      <!-- Search Box -->
+      <div class="search-container">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <input type="text" id="search-input" class="search-input" placeholder="Поиск заметок или тегов..." autocomplete="off">
+          <button id="search-clear" class="search-clear-btn">&times;</button>
+        </div>
+
+        <!-- Tags Row -->
+        <div class="tags-scroll-row" id="tags-bar">
+          <button class="tag-pill active" data-tag="all">🌸 Все</button>
+          <button class="tag-pill" data-tag="pinned">📌 Закрепленные</button>
+          <button class="tag-pill" data-tag="quests">⚔️ Квесты</button>
+          <button class="tag-pill" data-tag="secrets">🔒 Секреты</button>
+        </div>
+      </div>
+
+      <!-- Notes Feed -->
+      <div id="notes-container" class="notes-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </main>
+
+    <!-- Interactive Anime Mascot Companion -->
+    <div id="mascot-widget">
+      <div id="mascot-bubble" class="mascot-bubble">
+        Охаё, сэмпай! 🐾
+      </div>
+      <div id="mascot-avatar-container" class="mascot-avatar-container" title="Нажми на меня!">
+        <!-- Mascot SVG rendered here -->
+      </div>
+      <div id="mascot-heart-reaction" class="mascot-heart-reaction">💖</div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-notes">
+        <svg viewBox="0 0 24 24">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+        </svg>
+        <span>Заметки</span>
+      </button>
+
+      <button class="nav-item" id="nav-doodle">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        </svg>
+        <span>Рисунок</span>
+      </button>
+
+      <!-- Center FAB -->
+      <button class="fab-add" id="fab-new-note" title="Создать заметку">
+        +
+      </button>
+
+      <button class="nav-item" id="nav-secrets">
+        <svg viewBox="0 0 24 24">
+          <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+        </svg>
+        <span>Секреты</span>
+      </button>
+
+      <button class="nav-item" id="nav-customizer">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.28 19.59 10.59 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+        </svg>
+        <span>Стиль</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Note Editor Modal -->
+  <div class="modal-overlay" id="modal-note-editor">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div class="modal-title" id="editor-modal-title">
+          <span>📝 Заметка</span>
+        </div>
+        <button class="icon-btn" id="btn-close-editor">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <input type="text" id="note-input-title" class="search-input" placeholder="Заголовок заметки..." style="margin-bottom:12px;font-weight:700;font-size:16px;">
+        
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <select id="note-input-stamp" class="search-input" style="flex:1;">
+            <option value="">Штамп: Без штампа</option>
+            <option value="quest">⚔️ [КВЕСТ]</option>
+            <option value="secret">🔒 [СЕКРЕТНО]</option>
+            <option value="important">🔥 [ВАЖНО]</option>
+            <option value="idea">💡 [ИДЕЯ]</option>
+            <option value="kawaii">💖 [КАВАЙ]</option>
+          </select>
+          <input type="color" id="note-input-color" value="#2b1b36" title="Цвет карточки">
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input type="text" id="note-input-tags" class="search-input" placeholder="Теги через запятую (напр: Учеба, Аниме, Цели)">
+        </div>
+
+        <textarea id="note-input-content" class="search-input" placeholder="Текст заметки... Для чеклиста начните строку с: - [ ] задача" style="width:100%;height:180px;padding:12px;resize:none;font-family:inherit;line-height:1.6;"></textarea>
+
+        <div id="note-attachment-preview" style="margin-top:10px;display:none;">
+          <img id="attachment-img" style="width:100%;max-height:140px;object-fit:cover;border-radius:12px;border:1px solid var(--border-color);">
+          <button id="btn-remove-attachment" class="btn-secondary" style="margin-top:4px;padding:6px;font-size:11px;">Удалить картинку</button>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-top:14px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="note-input-pin"> 📌 Закрепить
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="note-input-secret"> 🔒 Скрыть паролем
+          </label>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button class="btn-primary" id="btn-save-note">💾 Сохранить</button>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button class="btn-secondary" id="btn-export-postcard" style="flex:1;">🖼️ Аниме-открытка (PNG)</button>
+          <button class="btn-secondary" id="btn-delete-note" style="flex:1;color:#ff5252;">🗑️ Удалить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customizer Modal ("Кастомизация всего") -->
+  <div class="modal-overlay" id="modal-customizer">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🎨 Полная кастомизация Yume Note</span>
+        </div>
+        <button class="icon-btn" id="btn-close-customizer">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- 1. Themes Carousel -->
+        <div class="setting-section">
+          <div class="setting-title">🌸 Готовые аниме-темы</div>
+          <div class="themes-carousel">
+            <div class="theme-card-pick" data-theme-pick="sakura">
+              <div class="theme-color-dots">
+                <div class="color-dot" style="background:#ff7597;"></div>
+                <div class="color-dot" style="background:#221a28;"></div>
+              </div>
+              <span class="theme-name">Sakura</span>
+            </div>
+
+            <div class="theme-card-pick" data-theme-pick="cyberpunk">
+              <div class="theme-color-dots">
+                <div class="color-dot" style="background:#fcee0a;"></div>
+                <div class="color-dot" style="background:#00f0ff;"></div>
+              </div>
+              <span class="theme-name">Cyberpunk</span>
+            </div>
+
+            <div class="theme-card-pick" data-theme-pick="persona">
+              <div class="theme-color-dots">
+                <div class="color-dot" style="background:#eb0029;"></div>
+                <div class="color-dot" style="background:#0a0a0c;"></div>
+              </div>
+              <span class="theme-name">Persona</span>
+            </div>
+
+            <div class="theme-card-pick" data-theme-pick="darkfantasy">
+              <div class="theme-color-dots">
+                <div class="color-dot" style="background:#9c27b0;"></div>
+                <div class="color-dot" style="background:#0c0814;"></div>
+              </div>
+              <span class="theme-name">Dark Magic</span>
+            </div>
+
+            <div class="theme-card-pick" data-theme-pick="bluearchive">
+              <div class="theme-color-dots">
+                <div class="color-dot" style="background:#00b4d8;"></div>
+                <div class="color-dot" style="background:#0d1829;"></div>
+              </div>
+              <span class="theme-name">Academy</span>
+            </div>
+
+            <div class="theme-card-pick" data-theme-pick="retro90s">
+              <div class="theme-color-dots">
+                <div class="color-dot" style="background:#f39c12;"></div>
+                <div class="color-dot" style="background:#19141e;"></div>
+              </div>
+              <span class="theme-name">Retro 90s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Custom Color Builder -->
+        <div class="setting-section">
+          <div class="setting-title">🎨 Пользовательская палитра цветов</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Основной акцент (Accent 1)</div>
+              <div class="setting-desc">Кнопки, бейджи, свечение</div>
+            </div>
+            <input type="color" id="picker-accent-primary" value="#ff7597">
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Второй акцент (Accent 2)</div>
+              <div class="setting-desc">Градиенты, детали</div>
+            </div>
+            <input type="color" id="picker-accent-secondary" value="#ff94b4">
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Фон приложения (Background)</div>
+              <div class="setting-desc">Базовый глубокий цвет</div>
+            </div>
+            <input type="color" id="picker-bg-primary" value="#17121b">
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Цвет карточек заметок</div>
+              <div class="setting-desc">Цвет плашек заметок</div>
+            </div>
+            <input type="color" id="picker-bg-card" value="#261c2e">
+          </div>
+          <button class="btn-secondary" id="btn-apply-custom-colors" style="margin-top:10px;">Применить кастомную палитру</button>
+        </div>
+
+        <!-- 3. Mascot Selection -->
+        <div class="setting-section">
+          <div class="setting-title">🐾 Аниме-помощник (Маскот)</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Показывать маскота</div>
+              <div class="setting-desc">Интерактивный персонаж на экране</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="switch-mascot-enabled" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Персонаж</div>
+              <div class="setting-desc">Выберите характер и голос</div>
+            </div>
+            <select id="select-mascot" class="search-input" style="width:160px;">
+              <option value="chitose">🐱 Читосэ (Catgirl)</option>
+              <option value="ray">⚡ Рэй (Netrunner)</option>
+              <option value="emilia">🔮 Эмилия (Mage)</option>
+              <option value="ken">🔥 Кэн (Shonen Hero)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 4. Visual Effects & Particles -->
+        <div class="setting-section">
+          <div class="setting-title">✨ Динамические спецэффекты</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Тип частиц</div>
+              <div class="setting-desc">Анимированный фон</div>
+            </div>
+            <select id="select-particle-type" class="search-input" style="width:160px;">
+              <option value="sakura">🌸 Сакура</option>
+              <option value="cyberpunk">💻 Киберпанк матрица</option>
+              <option value="sparks">✨ Магические искры</option>
+              <option value="hearts">💕 Сердечки</option>
+              <option value="snow">❄️ Зимний снег</option>
+              <option value="none">🚫 Выключить (экономия батареи)</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Плотность частиц</div>
+              <div class="setting-desc">Количество элементов</div>
+            </div>
+            <input type="range" id="slider-particle-density" min="10" max="60" value="28">
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Ретро CRT скайнлайны</div>
+              <div class="setting-desc">Эффект винтажного аниме-ТВ</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="switch-scanlines">
+              <span class="slider-round"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 5. Typography & Cards -->
+        <div class="setting-section">
+          <div class="setting-title">🔤 Шрифты и стили карточек</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Шрифт приложения</div>
+            </div>
+            <select id="select-font-family" class="search-input" style="width:160px;">
+              <option value="font-anime">🌸 Anime Cursive</option>
+              <option value="font-scifi">⚡ Sci-Fi Monospace</option>
+              <option value="font-pixel">👾 Pixel RPG</option>
+              <option value="font-kawaii">🎀 Kawaii Script</option>
+              <option value="font-clean">📱 Clean System</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Скругление углов карточек</div>
+            </div>
+            <input type="range" id="slider-card-radius" min="0" max="28" value="18">
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Размытие стекла (Blur)</div>
+            </div>
+            <input type="range" id="slider-card-blur" min="0" max="25" value="12">
+          </div>
+        </div>
+
+        <!-- 6. Wallpapers & Custom Background -->
+        <div class="setting-section">
+          <div class="setting-title">🖼️ Собственные обои</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Загрузить фоновое фото/GIF</div>
+              <div class="setting-desc">Любая картинка с вашего телефона</div>
+            </div>
+            <input type="file" id="input-wallpaper-file" accept="image/*" style="display:none;">
+            <button class="btn-secondary" id="btn-pick-wallpaper" style="width:auto;padding:8px 14px;margin:0;">Выбрать фото</button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Затемнение фона</div>
+            </div>
+            <input type="range" id="slider-bg-opacity" min="30" max="95" value="82">
+          </div>
+          <button class="btn-secondary" id="btn-clear-wallpaper" style="margin-top:6px;">Сбросить обои</button>
+        </div>
+
+        <!-- 7. Sound & App Name -->
+        <div class="setting-section">
+          <div class="setting-title">🔊 Звук и имя приложения</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Звуковые эффекты UI</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="switch-sound-enabled" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Громкость звуков</div>
+            </div>
+            <input type="range" id="slider-sound-volume" min="5" max="100" value="60">
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Имя приложения в шапке</div>
+            </div>
+            <input type="text" id="input-app-title" class="search-input" value="Yume Note 夢" style="width:160px;">
+          </div>
+        </div>
+
+        <!-- 8. PIN & Security -->
+        <div class="setting-section">
+          <div class="setting-title">🔒 Защита и PIN-код</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">Сменить PIN-код (по умолч: 1234)</div>
+            </div>
+            <input type="password" id="input-new-pin" class="search-input" placeholder="Новый PIN" maxlength="4" style="width:110px;letter-spacing:4px;text-align:center;">
+          </div>
+          <button class="btn-secondary" id="btn-change-pin" style="margin-top:8px;">Обновить PIN-код</button>
+        </div>
+
+        <!-- 9. Backup & Export -->
+        <div class="setting-section">
+          <div class="setting-title">💾 Резервная копия базы</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" id="btn-export-backup" style="flex:1;">📤 Экспорт JSON</button>
+            <input type="file" id="input-import-backup" accept=".json" style="display:none;">
+            <button class="btn-secondary" id="btn-trigger-import" style="flex:1;">📥 Импорт JSON</button>
+          </div>
+          <button class="btn-secondary" id="btn-reset-all" style="color:#ff5252;margin-top:12px;">Сбросить все настройки</button>
+        </div>
+
+        <!-- 10. Direct Android APK Download -->
+        <div class="setting-section">
+          <div class="setting-title">📱 Установочный файл для Android</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+            Скомпилированный автономный APK со всеми аниме-темами и маскотами. Работает 100% без интернета:
+          </div>
+          <a href="YumeNote.apk" download="YumeNote.apk" class="btn-primary" style="display:flex;align-items:center;justify-content:center;text-decoration:none;gap:8px;background:linear-gradient(135deg, #00b4d8, #0077b6);box-shadow:0 4px 16px rgba(0,180,216,0.4);">
+            <span>📥 Скачать YumeNote.apk (Готовый файл)</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Secret PIN Pad Modal -->
+  <div class="modal-overlay" id="modal-pin">
+    <div class="modal-sheet" style="max-height:85vh;">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔒 Секретный архив</span>
+        </div>
+        <button class="icon-btn" id="btn-close-pin">&times;</button>
+      </div>
+
+      <div class="modal-body pin-pad-container">
+        <div style="font-size:14px;color:var(--text-muted);text-align:center;">
+          Введи секретный 4-значный PIN-код для доступа к тайным заметкам:
+        </div>
+
+        <div class="pin-display">
+          <div class="pin-dot" id="pin-dot-1"></div>
+          <div class="pin-dot" id="pin-dot-2"></div>
+          <div class="pin-dot" id="pin-dot-3"></div>
+          <div class="pin-dot" id="pin-dot-4"></div>
+        </div>
+
+        <div class="pin-grid">
+          <button class="pin-key" data-key="1">1</button>
+          <button class="pin-key" data-key="2">2</button>
+          <button class="pin-key" data-key="3">3</button>
+          <button class="pin-key" data-key="4">4</button>
+          <button class="pin-key" data-key="5">5</button>
+          <button class="pin-key" data-key="6">6</button>
+          <button class="pin-key" data-key="7">7</button>
+          <button class="pin-key" data-key="8">8</button>
+          <button class="pin-key" data-key="9">9</button>
+          <button class="pin-key" data-key="clear" style="font-size:14px;color:var(--text-muted);">C</button>
+          <button class="pin-key" data-key="0">0</button>
+          <button class="pin-key" data-key="backspace" style="font-size:16px;">⌫</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Doodle Canvas Modal -->
+  <div class="modal-overlay" id="modal-doodle">
+    <div class="modal-sheet" style="max-height:92vh;">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🖌️ Рисование от руки / Doodle</span>
+        </div>
+        <button class="icon-btn" id="btn-close-doodle">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <canvas id="doodle-canvas"></canvas>
+
+        <div class="doodle-tools">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="color" id="doodle-color" value="#ff7597">
+            <select id="doodle-size" class="search-input" style="width:90px;height:34px;padding:0 8px;">
+              <option value="2">Тонкая</option>
+              <option value="5" selected>Средняя</option>
+              <option value="12">Жирная</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn" id="btn-doodle-undo" title="Отменить">↩️</button>
+            <button class="icon-btn" id="btn-doodle-clear" title="Очистить">🗑️</button>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-save-doodle-note" style="margin-top:16px;">✨ Создать заметку с рисунком</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification element -->
+  <div id="toast" class="toast-notice"></div>
+
+  <!-- Application Scripts -->
+  <script src="scripts/storage.js"></script>
+  <script src="scripts/audio.js"></script>
+  <script src="scripts/fx.js"></script>
+  <script src="scripts/mascot.js"></script>
+  <script src="scripts/doodle.js"></script>
+  <script src="scripts/customizer.js"></script>
+  <script src="scripts/notes.js"></script>
+  <script src="scripts/app.js"></script>
+</body>
+</html>
